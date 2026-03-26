@@ -1,0 +1,22 @@
+# Example project config
+# Replace URLs with real Scryfall card image URLs
+
+title = "Top 5 Burn Spells in Modern"
+
+# Used as the blurred background — a full-art land or thematic card works great
+background_card = "https://cards.scryfall.io/large/front/8/5/85df6b6a-2dcf-4828-a4a8-e07d52e1fddd.jpg?1723149865"
+
+# 1–5 foreground cards shown prominently
+foreground_cards = [
+    "https://cards.scryfall.io/large/front/e/7/e768c957-3a1f-42f5-853a-96942f645df5.jpg?1562479131",
+    "https://cards.scryfall.io/large/front/3/c/3c0f5411-1940-410f-96ce-6f92513f753a.jpg?1599706366",
+    "https://cards.scryfall.io/large/front/1/8/183ef738-0559-49ca-85b4-e6836521f203.jpg?1690817860",
+    "https://cards.scryfall.io/large/front/d/6/d6bfa227-4309-40ed-952c-279595eab17e.jpg?1701690543",
+]
+
+# Optional: override global defaults for this project
+# card_scale = 0.72
+# card_overlap = 0.12
+# title_font_size = 90
+# title_bar_opacity = 0.55
+# title_bar_position = "bottom"   # "top" or "bottom"
