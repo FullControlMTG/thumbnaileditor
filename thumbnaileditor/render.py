@@ -1,7 +1,7 @@
 import math
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 
 from .config import Config
 from .project import ProjectConfig
@@ -22,7 +22,7 @@ def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image
 
     # 1. Background
     bg = fetch_image(project_config.background_card, env_config.cache_folder)
-    bg = _fill_and_blur(bg, width, height)
+    bg = _make_mirrored_background(bg, width, height)
     canvas.paste(bg, (0, 0))
 
     # 2. Foreground cards
@@ -51,25 +51,27 @@ def _resolve_resolution(project_config: ProjectConfig, env_config: Config) -> tu
     return env_config.output_resolution
 
 
-def _fill_and_blur(img: Image.Image, width: int, height: int) -> Image.Image:
-    """Scale image to fill the frame (crop to fit), then blur."""
-    img_ratio = img.width / img.height
-    frame_ratio = width / height
+def _make_mirrored_background(img: Image.Image, width: int, height: int) -> Image.Image:
+    """Resize image to output height, then tile it as a mirrored pair.
 
-    if img_ratio > frame_ratio:
-        # Image is wider — match height, crop width
-        new_h = height
-        new_w = int(new_h * img_ratio)
-    else:
-        # Image is taller — match width, crop height
-        new_w = width
-        new_h = int(new_w / img_ratio)
+    The left half of the canvas shows the center-cropped image; the right half
+    shows a horizontally flipped copy of the same crop.
+    """
+    half_w = width // 2
 
-    img = img.resize((new_w, new_h), Image.LANCZOS)
-    left = (new_w - width) // 2
-    top = (new_h - height) // 2
-    img = img.crop((left, top, left + width, top + height))
-    return img.filter(ImageFilter.GaussianBlur(radius=12))
+    # Resize to output height, preserving aspect ratio
+    ratio = height / img.height
+    scaled_w = int(img.width * ratio)
+    img = img.resize((scaled_w, height), Image.LANCZOS)
+
+    # Center-crop to half the canvas width
+    left = max(0, (scaled_w - half_w) // 2)
+    tile = img.crop((left, 0, left + half_w, height))
+
+    canvas = Image.new("RGBA", (width, height))
+    canvas.paste(tile, (0, 0))
+    canvas.paste(tile.transpose(Image.FLIP_LEFT_RIGHT), (half_w, 0))
+    return canvas
 
 
 def _scale_to_height(img: Image.Image, target_height: int) -> Image.Image:

@@ -2,14 +2,14 @@
 
 An automated thumbnail editor for FullControlMTG video thumbnails.
 
-Generates professional 1920x1080 thumbnails by compositing Magic: The Gathering card images with a blurred background, foreground cards, and a title overlay.
+Generates professional 1920x1080 thumbnails by compositing Magic: The Gathering card images with a mirrored background, foreground cards, and a title overlay.
 
 ---
 
 ## Features
 
 - **Multi-card layout**: Display 1–5 foreground cards with alternating tilt rotation
-- **Blurred background**: Uses a full-art card scaled to fill the frame with a Gaussian blur effect
+- **Mirrored background**: Uses a full-art card scaled to output height; the left half shows the card and the right half shows a horizontally mirrored copy
 - **Title bar overlay**: Semi-transparent black bar with white outlined text, configurable at top or bottom
 - **Scryfall image caching**: Card images are downloaded once and cached locally to avoid redundant requests
 - **Per-project config**: Each project has its own `config.toml` with optional overrides for every global setting
