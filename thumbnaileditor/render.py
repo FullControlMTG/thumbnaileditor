@@ -17,6 +17,7 @@ def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image
     font_size = project_config.title_font_size or env_config.title_font_size
     bar_opacity = project_config.title_bar_opacity or env_config.title_bar_opacity
     bar_position = project_config.title_bar_position or env_config.title_bar_position
+    bar_padding = project_config.title_bar_padding if project_config.title_bar_padding is not None else env_config.title_bar_padding
 
     canvas = Image.new("RGBA", (width, height))
 
@@ -35,7 +36,7 @@ def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image
     _paste_foreground_cards(canvas, cards, width, height, card_overlap)
 
     # 3. Title bar + text
-    _draw_title(canvas, project_config.title, width, height, font_size, bar_opacity, bar_position)
+    _draw_title(canvas, project_config.title, width, height, font_size, bar_opacity, bar_position, bar_padding)
 
     return canvas.convert("RGB")
 
@@ -120,6 +121,7 @@ def _draw_title(
     font_size: int,
     bar_opacity: float,
     bar_position: str,
+    bar_padding: float,
 ) -> None:
     font = _load_font(font_size)
 
@@ -130,9 +132,9 @@ def _draw_title(
     bar_h = text_h + int(font_size * 0.7)
 
     if bar_position == "top":
-        bar_y = int(height * 0.05)
+        bar_y = int(height * bar_padding)
     else:  # bottom
-        bar_y = height - bar_h - int(height * 0.05)
+        bar_y = height - bar_h - int(height * bar_padding)
 
     # Semi-transparent black bar
     bar = Image.new("RGBA", (width, bar_h), (0, 0, 0, int(255 * bar_opacity)))

@@ -20,6 +20,7 @@ class ProjectConfig:
     title_font_size: int | None = None
     title_bar_opacity: float | None = None
     title_bar_position: str | None = None
+    title_bar_padding: float | None = None
 
 
 def load_project(project_path: str | Path) -> tuple[Path, ProjectConfig]:
@@ -52,6 +53,7 @@ def load_project(project_path: str | Path) -> tuple[Path, ProjectConfig]:
         title_font_size=raw.get("title_font_size"),
         title_bar_opacity=raw.get("title_bar_opacity"),
         title_bar_position=raw.get("title_bar_position"),
+        title_bar_padding=raw.get("title_bar_padding"),
     )
 
 

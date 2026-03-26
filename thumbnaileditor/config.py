@@ -18,6 +18,7 @@ class Config:
     title_font_size: int = field(default_factory=lambda: int(os.getenv("TITLE_FONT_SIZE", "90")))
     title_bar_opacity: float = field(default_factory=lambda: float(os.getenv("TITLE_BAR_OPACITY", "0.55")))
     title_bar_position: str = field(default_factory=lambda: os.getenv("TITLE_BAR_POSITION", "bottom"))
+    title_bar_padding: float = field(default_factory=lambda: float(os.getenv("TITLE_BAR_PADDING", "0.05")))
 
 
 def _parse_resolution(value: str) -> tuple[int, int]:
