@@ -1,14 +1,13 @@
 [metadata]
-title = "Sans-Black Elemental POWER"   # Keep to around 35 characters
-color_identity = ["W", "U", "R", "G"]
+title = "Thoracle Combo"   # Keep to around 35 characters
+color_identity = ["U", "B"]
 
 [cards]
 # Scryfall card page URLs — art crop is fetched automatically
 background_card = "https://scryfall.com/card/ecl/252/wistfulness"
 foreground_cards = [
-    "https://scryfall.com/card/ecc/132/risen-reef",
-    "https://scryfall.com/card/znr/232/omnath-locus-of-creation",
-    "https://scryfall.com/card/znr/193/lotus-cobra",
+    "https://scryfall.com/card/thb/73/thassas-oracle",
+    "https://scryfall.com/card/sta/33/tainted-pact",
 ]
 card_scale = 0.72
 card_overlap = -0.05

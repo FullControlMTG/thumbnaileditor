@@ -1,0 +1,28 @@
+[metadata]
+title = "Lightning Bolt Tribal"   # Keep to around 35 characters
+color_identity = ["R"]
+
+[cards]
+# Scryfall card page URLs — art crop is fetched automatically
+background_card = "https://scryfall.com/card/j21/787/lightning-bolt"
+foreground_cards = [
+    "https://scryfall.com/card/j21/787/lightning-bolt",
+    "https://scryfall.com/card/j21/787/lightning-bolt",
+    "https://scryfall.com/card/j21/787/lightning-bolt",
+    "https://scryfall.com/card/j21/787/lightning-bolt",
+    "https://scryfall.com/card/j21/787/lightning-bolt",
+]
+card_scale = 0.52
+card_overlap = -0.05
+card_rotation = -3.5
+
+[title]
+font_size = 125
+pip_radius = 100
+pip_position = 850
+text_dropshadow_offset = 10
+
+[title.shadow]
+position = 700
+height = 160
+opacity = 0.55
