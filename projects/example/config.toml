@@ -18,6 +18,7 @@ card_rotation = -3.5
 font_size = 125
 pip_radius = 100
 pip_position = 850
+text_dropshadow_offset = 10
 
 [title.shadow]
 position = 700

@@ -33,11 +33,13 @@ def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image
         for url in project_config.foreground_cards
     ]
     cards = [_scale_to_height(img, card_height) for img in cards]
+    cards = [_round_card_corners(img) for img in cards]
     _paste_foreground_cards(canvas, cards, width, height, card_overlap, card_rotation)
 
     # 3. Title bar + text
     pip_radius = (project_config.pip_radius if project_config.pip_radius is not None else env_config.pip_radius) if project_config.color_identity else 0
-    bar_y, bar_h = _draw_title(canvas, project_config.title, width, height, font_size, bar_opacity, bar_position, project_config.title_bar_height, pip_radius)
+    text_shadow_offset = project_config.title_text_dropshadow_offset if project_config.title_text_dropshadow_offset is not None else env_config.title_text_dropshadow_offset
+    bar_y, bar_h = _draw_title(canvas, project_config.title, width, height, font_size, bar_opacity, bar_position, project_config.title_bar_height, pip_radius, text_shadow_offset)
 
     # 4. Color identity pips (drawn over the bar)
     if project_config.color_identity:
@@ -78,6 +80,18 @@ def _make_mirrored_background(img: Image.Image, width: int, height: int) -> Imag
     canvas.paste(tile, (0, 0))
     canvas.paste(tile.transpose(Image.FLIP_LEFT_RIGHT), (half_w, 0))
     return canvas
+
+
+_MTG_CORNER_RATIO = 3 / 63  # 3mm radius on a 63mm-wide card
+
+
+def _round_card_corners(img: Image.Image) -> Image.Image:
+    radius = int(img.width * _MTG_CORNER_RATIO)
+    mask = Image.new("L", img.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle([(0, 0), (img.width - 1, img.height - 1)], radius=radius, fill=255)
+    result = img.copy().convert("RGBA")
+    result.putalpha(mask)
+    return result
 
 
 def _scale_to_height(img: Image.Image, target_height: int) -> Image.Image:
@@ -128,6 +142,7 @@ def _draw_title(
     bar_position: int | None,
     bar_height: int | None,
     pip_radius: int = 0,
+    text_shadow_offset: int = 0,
 ) -> tuple[int, int]:
     font = _load_font(font_size)
 
@@ -163,6 +178,14 @@ def _draw_title(
     text_x = width // 2
     text_y = bar_y + text_y_offset
 
+    if text_shadow_offset:
+        draw.text(
+            (text_x + text_shadow_offset, text_y + text_shadow_offset),
+            title,
+            font=font,
+            fill=(0, 0, 0, 180),
+            anchor="mm",
+        )
     draw.text(
         (text_x, text_y),
         title,

@@ -20,6 +20,7 @@ class Config:
     title_font_size: int = field(default_factory=lambda: int(os.getenv("TITLE_FONT_SIZE", "90")))
     title_bar_opacity: float = field(default_factory=lambda: float(os.getenv("TITLE_BAR_OPACITY", "0.55")))
     pip_radius: int = field(default_factory=lambda: int(os.getenv("PIP_RADIUS", "50")))
+    title_text_dropshadow_offset: int = field(default_factory=lambda: int(os.getenv("TITLE_TEXT_DROPSHADOW_OFFSET", "3")))
 
 
 def _parse_resolution(value: str) -> tuple[int, int]:

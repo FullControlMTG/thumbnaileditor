@@ -26,6 +26,7 @@ class ProjectConfig:
     color_identity: list[str] = field(default_factory=list)
     pip_radius: int | None = None
     pip_position: int | None = None         # explicit pixel y for top of pips
+    title_text_dropshadow_offset: int | None = None
     output_resolution: str | None = None
 
 
@@ -69,6 +70,7 @@ def load_project(project_path: str | Path) -> tuple[Path, ProjectConfig]:
         color_identity=metadata_section.get("color_identity", []),
         pip_radius=title_section.get("pip_radius"),
         pip_position=title_section.get("pip_position"),
+        title_text_dropshadow_offset=title_section.get("text_dropshadow_offset"),
     )
 
 
