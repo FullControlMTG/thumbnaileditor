@@ -1,20 +1,21 @@
+![thumbnaileditor](example/three-color-example/three-color-example.png)
+
 # thumbnaileditor
 
-An automated thumbnail editor for FullControlMTG video thumbnails.
-
-Generates professional 1920x1080 thumbnails by compositing Magic: The Gathering card images with a mirrored background, foreground cards, and a title overlay.
+Automated thumbnail generator for FullControlMTG video content. Composites Magic: The Gathering card images into polished 1920×1080 thumbnails with a mirrored background, foreground card spread, color identity pips, and a styled title bar.
 
 ---
 
 ## Features
 
-- **Multi-card layout**: Display 1–5 foreground cards with alternating tilt rotation
-- **Mirrored background**: Uses a full-art card scaled to output height; the left half shows the card and the right half shows a horizontally mirrored copy
-- **Title bar overlay**: Semi-transparent black bar with white outlined text, configurable at top or bottom
-- **Scryfall image caching**: Card images are downloaded once and cached locally to avoid redundant requests
-- **Per-project config**: Each project has its own `config.toml` with optional overrides for every global setting
-- **Batch rendering**: Process all projects in a single command
-- **Dry-run validation**: Validate project configs without producing output
+- **Scryfall-native** — provide a standard `scryfall.com/card/...` URL for any card; images are resolved and cached automatically
+- **Mirrored background** — card art is scaled to output height and tiled as a symmetric mirror pair
+- **1–5 foreground cards** — laid out with configurable scale, overlap, and fan rotation; corners are rounded to match physical card proportions
+- **Title bar** — semi-transparent overlay with white text, optional drop shadow, and fully configurable position and height
+- **Color identity pips** — MTG mana symbols displayed below the title, in WUBRG order, at a configurable size and position
+- **Per-project config** — each project is a folder with a `config.toml`; every setting has a sensible default and can be overridden per project
+- **Batch rendering** — render every project in one command; failed projects are skipped and reported, others continue
+- **Dry-run validation** — catch config errors without producing output
 
 ---
 
@@ -31,87 +32,14 @@ Generates professional 1920x1080 thumbnails by compositing Magic: The Gathering 
 git clone https://github.com/FullControlMTG/thumbnaileditor
 cd thumbnaileditor
 python3 -m venv env
-source env/bin/activate (or ./env/Scripts/activate if on windows)
+
+# macOS / Linux
+source env/bin/activate
+
+# Windows
+env\Scripts\activate
+
 pip install -r requirements.txt
-```
-
----
-
-## Configuration
-
-### Global settings (`.env`)
-
-Copy `.env.example` to `.env` and adjust as needed:
-
-```env
-PROJECTS_FOLDER=./projects
-OUTPUT_FOLDER=./output
-CACHE_FOLDER=./cache
-OUTPUT_RESOLUTION=1920x1080
-CARD_SCALE=0.72
-CARD_OVERLAP=0.12
-TITLE_FONT_SIZE=90
-TITLE_BAR_OPACITY=0.55
-TITLE_BAR_POSITION=bottom
-```
-
-### Project config (`projects/<project_name>/config.toml`)
-
-Each project lives in its own subdirectory under `PROJECTS_FOLDER`:
-
-```toml
-title = "My Video Title"
-background_card = "https://cards.scryfall.io/..."   # Full-art card used as background
-foreground_cards = [
-    "https://cards.scryfall.io/...",                # 1–5 cards to display in the foreground
-    "https://cards.scryfall.io/...",
-]
-
-# Optional per-project overrides (all global settings can be overridden here)
-card_scale = 0.72
-card_overlap = 0.12
-title_font_size = 90
-title_bar_opacity = 0.55
-title_bar_position = "bottom"   # "top" or "bottom"
-output_resolution = "1920x1080"
-```
-
-An example project is provided at `projects/example/config.toml`.
-
----
-
-## Usage
-
-### Render a single project
-
-```bash
-python main.py render projects/example
-```
-
-Output is saved to `{OUTPUT_FOLDER}/{project_name}.png` by default.
-
-**Options:**
-
-| Flag | Description |
-|------|-------------|
-| `--dry-run` | Validate the config without rendering |
-| `-o, --output <path>` | Write output to a custom file path |
-
-```bash
-python main.py render projects/example --dry-run
-python main.py render projects/example -o ~/Desktop/my_thumbnail.png
-```
-
-### Render all projects
-
-```bash
-python main.py batch
-```
-
-Discovers all subdirectories in `PROJECTS_FOLDER`, renders each one, and continues on errors (errors are printed to stderr).
-
-```bash
-python main.py batch --dry-run   # Validate all configs without rendering
 ```
 
 ---
@@ -120,67 +48,152 @@ python main.py batch --dry-run   # Validate all configs without rendering
 
 ```
 thumbnaileditor/
-├── main.py                  # Entry point
+├── main.py                    # Entry point
 ├── requirements.txt
-├── .env.example             # Environment variable template
+├── .env.example               # Environment variable template
+├── assets/                    # Mana pip PNGs (white.png, blue.png, etc.)
 ├── thumbnaileditor/
-│   ├── cli.py               # CLI commands
-│   ├── config.py            # Global config loader
-│   ├── project.py           # Project config loader & discovery
-│   ├── render.py            # Image composition logic
-│   └── scryfall.py          # Image download & caching
+│   ├── cli.py                 # CLI commands
+│   ├── config.py              # Global defaults (env vars)
+│   ├── project.py             # Per-project config loader
+│   ├── render.py              # Image composition pipeline
+│   └── scryfall.py            # URL resolution, download, and caching
 ├── projects/
-│   └── example/
+│   └── <project-name>/
 │       └── config.toml
-├── cache/                   # Downloaded card images (auto-created)
-└── output/                  # Rendered thumbnails (auto-created)
+├── example/                   # Example projects with rendered output
+├── cache/                     # Downloaded card images (auto-created)
+└── output/                    # Rendered thumbnails (auto-created)
+```
+
+---
+
+## Global defaults (`.env`)
+
+Copy `.env.example` to `.env` to override any global default:
+
+```env
+PROJECTS_FOLDER=./projects
+OUTPUT_FOLDER=./output
+CACHE_FOLDER=./cache
+ASSETS_FOLDER=./assets
+OUTPUT_RESOLUTION=1920x1080
+CARD_SCALE=0.72
+CARD_OVERLAP=0.12
+CARD_ROTATION=3.5
+TITLE_FONT_SIZE=90
+TITLE_BAR_OPACITY=0.55
+PIP_RADIUS=50
+TITLE_TEXT_DROPSHADOW_OFFSET=3
+```
+
+---
+
+## Project config (`projects/<name>/config.toml`)
+
+Each project lives in its own subdirectory. The config is organized into four sections:
+
+```toml
+[metadata]
+title = "My Video Title"            # Displayed in the title bar
+color_identity = ["W", "U", "G"]   # Mana pips shown below the title (WUBRG order)
+                                    # Valid values: "W", "U", "B", "R", "G", "C"
+
+[cards]
+# Standard Scryfall card page URL — the correct image is fetched automatically
+background_card = "https://scryfall.com/card/spg/44/solitude"
+foreground_cards = [
+    "https://scryfall.com/card/dmu/24/leyline-binding",
+    "https://scryfall.com/card/woe/195/up-the-beanstalk",
+]
+# Optional card layout overrides
+card_scale   = 0.72    # Card height as a fraction of output height
+card_overlap = -0.05   # Negative = gap between cards; positive = overlap
+card_rotation = 3.5    # Max fan angle in degrees
+
+[title]
+font_size              = 90     # Title text size in pixels
+pip_radius             = 50     # Mana pip radius in pixels
+pip_position           = 980    # Pixel y for top of pip row (default: just below bar)
+text_dropshadow_offset = 3      # Pixel offset for text drop shadow (0 to disable)
+
+[title.shadow]
+position = 750    # Pixel y for top of title bar (default: near bottom)
+height   = 160    # Explicit bar height in pixels (default: sized to text)
+opacity  = 0.55   # Bar opacity (0.0–1.0)
+```
+
+All fields except `[metadata].title`, `[cards].background_card`, and `[cards].foreground_cards` are optional.
+
+---
+
+## Usage
+
+### Render a single project
+
+```bash
+python main.py render projects/<name>
+```
+
+Output is written to `{OUTPUT_FOLDER}/<name>.png` by default.
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Validate the config without rendering |
+| `-o, --output <path>` | Write output to a custom file path |
+
+```bash
+python main.py render projects/my-video --dry-run
+python main.py render projects/my-video -o ~/Desktop/thumbnail.png
+```
+
+### Render all projects
+
+```bash
+python main.py batch
+```
+
+Discovers every subdirectory in `PROJECTS_FOLDER` that contains a `config.toml`, renders each one, and continues past any errors (errors are printed to stderr).
+
+```bash
+python main.py batch --dry-run
 ```
 
 ---
 
 ## Runbook
 
-### Clearing the image cache
+### Creating a new project
 
-Card images are cached indefinitely in `CACHE_FOLDER` using SHA256-based filenames. To force a re-download of all images:
-
-```bash
-rm -rf ./cache/*
-```
-
-To clear a single cached image, delete the corresponding file from `./cache/`.
-
-### Adding a new project
-
-1. Create a new subdirectory under `projects/`:
+1. Create a project folder:
    ```bash
-   mkdir projects/my-new-video
+   mkdir projects/my-video
    ```
-2. Add a `config.toml` with at minimum `title`, `background_card`, and `foreground_cards`.
-3. Validate the config before rendering:
+2. Add a `config.toml` — copy from `example/` as a starting point.
+3. Validate the config:
    ```bash
-   python main.py render projects/my-new-video --dry-run
+   python main.py render projects/my-video --dry-run
    ```
 4. Render:
    ```bash
-   python main.py render projects/my-new-video
+   python main.py render projects/my-video
    ```
 
 ### Batch rendering all projects
 
 ```bash
-source .venv/bin/activate
+source env/bin/activate        # or env\Scripts\activate on Windows
 python main.py batch
 ```
 
-Failed projects are skipped and reported to stderr. Successfully rendered thumbnails land in `./output/`.
+Each project renders to `./output/<name>.png`. Failed projects are skipped and logged to stderr; the rest continue.
 
-### Troubleshooting
+### Clearing the image cache
 
-| Problem | Fix |
-|---------|-----|
-| `ModuleNotFoundError` | Activate the virtual environment: `source .venv/bin/activate` |
-| Image download timeout | Default timeout is 15 seconds. Check your internet connection or the Scryfall URL. |
-| Font renders as default/ugly | Install a system font: `sudo apt install fonts-liberation` (Debian/Ubuntu) |
-| Wrong output resolution | Set `OUTPUT_RESOLUTION` in `.env` or `output_resolution` in the project's `config.toml` |
-| Batch skips a project | Run `python main.py render projects/<name>` directly to see the full error |
+Card images are cached indefinitely in `CACHE_FOLDER` using content-addressed filenames. To force a full re-download:
+
+```bash
+rm -rf ./cache/*
+```
+
+To re-download a single card, delete its file from `./cache/` and re-render the project.
