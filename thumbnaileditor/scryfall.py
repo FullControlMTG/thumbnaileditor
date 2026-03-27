@@ -8,8 +8,8 @@ from PIL import Image
 _SCRYFALL_CARD_URL_RE = re.compile(r"https?://scryfall\.com/card/([^/?#]+)/([^/?#]+)")
 
 
-def resolve_image_url(url: str) -> str:
-    """If url is a Scryfall card page URL, resolve it to an art_crop image URL via the API.
+def _resolve_scryfall_url(url: str, image_type: str) -> str:
+    """If url is a Scryfall card page URL, resolve it to the given image type via the API.
     Otherwise return the url unchanged."""
     m = _SCRYFALL_CARD_URL_RE.match(url)
     if not m:
@@ -20,7 +20,19 @@ def resolve_image_url(url: str) -> str:
         timeout=15,
     )
     response.raise_for_status()
-    return response.json()["image_uris"]["art_crop"]
+    data = response.json()
+    image_uris = data.get("image_uris") or data["card_faces"][0]["image_uris"]
+    return image_uris[image_type]
+
+
+def resolve_background_url(url: str) -> str:
+    """Resolve a Scryfall card page URL to its art_crop image URL."""
+    return _resolve_scryfall_url(url, "art_crop")
+
+
+def resolve_card_url(url: str) -> str:
+    """Resolve a Scryfall card page URL to its full PNG image URL."""
+    return _resolve_scryfall_url(url, "png")
 
 
 def fetch_image(url: str, cache_folder: str | Path) -> Image.Image:

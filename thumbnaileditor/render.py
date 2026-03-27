@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .config import Config
 from .project import ProjectConfig
-from .scryfall import fetch_image, resolve_image_url
+from .scryfall import fetch_image, resolve_background_url, resolve_card_url
 
 
 def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image.Image:
@@ -24,14 +24,14 @@ def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image
     canvas = Image.new("RGBA", (width, height))
 
     # 1. Background
-    bg = fetch_image(resolve_image_url(project_config.background_card), env_config.cache_folder)
+    bg = fetch_image(resolve_background_url(project_config.background_card), env_config.cache_folder)
     bg = _make_mirrored_background(bg, width, height)
     canvas.paste(bg, (0, 0))
 
     # 2. Foreground cards
     card_height = int(height * card_scale)
     cards = [
-        fetch_image(url, env_config.cache_folder)
+        fetch_image(resolve_card_url(url), env_config.cache_folder)
         for url in project_config.foreground_cards
     ]
     cards = [_scale_to_height(img, card_height) for img in cards]
