@@ -1,0 +1,26 @@
+[metadata]
+title = "Sans-Black Elemental POWER"   # Keep to around 35 characters
+color_identity = ["W", "U", "R", "G"]
+
+[cards]
+# Scryfall card page URLs — art crop is fetched automatically
+background_card = "https://scryfall.com/card/ecl/252/wistfulness"
+foreground_cards = [
+    "https://scryfall.com/card/ecc/132/risen-reef",
+    "https://scryfall.com/card/znr/232/omnath-locus-of-creation",
+    "https://scryfall.com/card/znr/193/lotus-cobra",
+]
+card_scale = 0.72
+card_overlap = -0.05
+card_rotation = -3.5
+
+[title]
+font_size = 125
+pip_radius = 100
+pip_position = 850
+text_dropshadow_offset = 10
+
+[title.shadow]
+position = 700
+height = 160
+opacity = 0.55

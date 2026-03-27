@@ -1,0 +1,26 @@
+[metadata]
+title = "Blue-White Control"   # Keep to around 35 characters
+color_identity = ["W", "U"]
+
+[cards]
+# Scryfall card page URLs — art crop is fetched automatically
+background_card = "https://scryfall.com/card/clu/211/supreme-verdict"
+foreground_cards = [
+    "https://scryfall.com/card/2x2/57/mana-drain",
+    "https://scryfall.com/card/dom/207/teferi-hero-of-dominaria",
+    "https://scryfall.com/card/tdc/134/swords-to-plowshares",
+]
+card_scale = 0.72
+card_overlap = -0.05
+card_rotation = -3.5
+
+[title]
+font_size = 125
+pip_radius = 100
+pip_position = 850
+text_dropshadow_offset = 10
+
+[title.shadow]
+position = 700
+height = 160
+opacity = 0.55

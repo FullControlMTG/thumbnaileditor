@@ -1,5 +1,5 @@
 [metadata]
-title = "Ruby Storm"
+title = "Ruby Storm"   # Keep to around 35 characters
 color_identity = ["R"]
 
 [cards]
