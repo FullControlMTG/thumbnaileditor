@@ -1,4 +1,3 @@
-import math
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -12,11 +11,14 @@ def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image
     """Compose and return the final thumbnail as a PIL Image."""
     # Resolve effective settings (project overrides env defaults)
     width, height = _resolve_resolution(project_config, env_config)
-    card_scale = project_config.card_scale or env_config.card_scale
-    card_overlap = project_config.card_overlap or env_config.card_overlap
-    card_rotation = project_config.card_rotation if project_config.card_rotation is not None else env_config.card_rotation
-    font_size = project_config.title_font_size or env_config.title_font_size
-    bar_opacity = project_config.title_bar_opacity or env_config.title_bar_opacity
+    def _resolve(project_val, env_val):
+        return project_val if project_val is not None else env_val
+
+    card_scale = _resolve(project_config.card_scale, env_config.card_scale)
+    card_overlap = _resolve(project_config.card_overlap, env_config.card_overlap)
+    card_rotation = _resolve(project_config.card_rotation, env_config.card_rotation)
+    font_size = _resolve(project_config.title_font_size, env_config.title_font_size)
+    bar_opacity = _resolve(project_config.title_bar_opacity, env_config.title_bar_opacity)
     bar_position = project_config.title_bar_position  # pixel y, or None for default
 
     canvas = Image.new("RGBA", (width, height))
@@ -37,8 +39,8 @@ def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image
     _paste_foreground_cards(canvas, cards, width, height, card_overlap, card_rotation)
 
     # 3. Title bar + text
-    pip_radius = (project_config.pip_radius if project_config.pip_radius is not None else env_config.pip_radius) if project_config.color_identity else 0
-    text_shadow_offset = project_config.title_text_dropshadow_offset if project_config.title_text_dropshadow_offset is not None else env_config.title_text_dropshadow_offset
+    pip_radius = _resolve(project_config.pip_radius, env_config.pip_radius) if project_config.color_identity else 0
+    text_shadow_offset = _resolve(project_config.title_text_dropshadow_offset, env_config.title_text_dropshadow_offset)
     bar_y, bar_h = _draw_title(canvas, project_config.title, width, height, font_size, bar_opacity, bar_position, project_config.title_bar_height, pip_radius, text_shadow_offset)
 
     # 4. Color identity pips (drawn over the bar)
@@ -124,10 +126,7 @@ def _paste_foreground_cards(
         paste_x = x - (rotated.width - card.width) // 2
         paste_y = y - (rotated.height - card.height) // 2
 
-        if rotated.mode == "RGBA":
-            canvas.paste(rotated, (paste_x, paste_y), rotated)
-        else:
-            canvas.paste(rotated, (paste_x, paste_y))
+        canvas.paste(rotated, (paste_x, paste_y), rotated)
 
         x += card.width - int(card_w * overlap)
 
@@ -197,8 +196,8 @@ def _draw_title(
     return bar_y, bar_h
 
 
-_PIP_ORDER = ["white", "blue", "black", "red", "green", "colorless"]
-_COLOR_TO_PIP = {"W": "white", "U": "blue", "B": "black", "R": "red", "G": "green", "C": "colorless"}
+_PIP_ORDER = ["W", "U", "B", "R", "G", "C"]
+_PIP_FILENAMES = {"W": "white", "U": "blue", "B": "black", "R": "red", "G": "green", "C": "colorless"}
 
 
 def _draw_color_identity(
@@ -217,11 +216,10 @@ def _draw_color_identity(
     # Load pips in WUBRG+C order, skipping any that aren't requested or can't be found
     identity_set = {c.upper() for c in color_identity}
     pips: list[Image.Image] = []
-    for color_key in _PIP_ORDER:
-        short = next(k for k, v in _COLOR_TO_PIP.items() if v == color_key)
+    for short in _PIP_ORDER:
         if short not in identity_set:
             continue
-        pip_path = Path(assets_folder) / f"{color_key}.png"
+        pip_path = Path(assets_folder) / f"{_PIP_FILENAMES[short]}.png"
         if not pip_path.exists():
             continue
         pip = Image.open(pip_path).convert("RGBA")

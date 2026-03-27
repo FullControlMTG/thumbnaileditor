@@ -46,14 +46,14 @@ def load_project(project_path: str | Path) -> tuple[Path, ProjectConfig]:
 
     _validate(raw, config_file)
 
-    cards = raw["cards"]["foreground_cards"]
-    if not (1 <= len(cards) <= 5):
-        raise ValueError(f"foreground_cards must have 1–5 entries, got {len(cards)}")
-
+    metadata_section = raw["metadata"]
+    cards_section = raw["cards"]
     title_section = raw.get("title", {})
     shadow_section = title_section.get("shadow", {})
-    cards_section = raw["cards"]
-    metadata_section = raw["metadata"]
+
+    cards = cards_section["foreground_cards"]
+    if not (1 <= len(cards) <= 5):
+        raise ValueError(f"foreground_cards must have 1–5 entries, got {len(cards)}")
 
     return path, ProjectConfig(
         title=metadata_section["title"],

@@ -1,0 +1,26 @@
+[metadata]
+title = "Ruby Storm"
+color_identity = ["R"]
+
+[cards]
+# Scryfall card page URLs — art crop is fetched automatically
+background_card = "https://scryfall.com/card/mh3/295/ruby-medallion"
+foreground_cards = [
+    "https://scryfall.com/card/khm/123/birgi-god-of-storytelling-harnfel-horn-of-bounty",
+    "https://scryfall.com/card/dmr/125/grapeshot",
+    "https://scryfall.com/card/mh3/247/ral-monsoon-mage-ral-leyline-prodigy",
+]
+card_scale = 0.72
+card_overlap = -0.05
+card_rotation = -3.5
+
+[title]
+font_size = 125
+pip_radius = 100
+pip_position = 850
+text_dropshadow_offset = 10
+
+[title.shadow]
+position = 700
+height = 160
+opacity = 0.55
