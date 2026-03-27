@@ -30,8 +30,8 @@ Generates professional 1920x1080 thumbnails by compositing Magic: The Gathering 
 ```bash
 git clone https://github.com/FullControlMTG/thumbnaileditor
 cd thumbnaileditor
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv env
+source env/bin/activate
 pip install -r requirements.txt
 ```
 
