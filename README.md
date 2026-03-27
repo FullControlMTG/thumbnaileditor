@@ -163,37 +163,22 @@ python main.py batch --dry-run
 
 ## Runbook
 
-### Creating a new project
-
-1. Create a project folder:
-   ```bash
-   mkdir projects/my-video
-   ```
-2. Add a `config.toml` — copy from `example/` as a starting point.
-3. Validate the config:
-   ```bash
-   python main.py render projects/my-video --dry-run
-   ```
-4. Render:
-   ```bash
-   python main.py render projects/my-video
-   ```
-
-### Batch rendering all projects
-
+Clear Cache
 ```bash
-source env/bin/activate        # or env\Scripts\activate on Windows
+rm -rf ./cache/*   or CACHE_FOLDER
+```
+
+Dry Run
+```bash
+python main.py render projects/my-video --dry-run
+```
+
+Live Run (Single)
+```bash
+python main.py render projects/my-video
+```
+
+Live Run (Batch)
+```bash
 python main.py batch
 ```
-
-Each project renders to `./output/<name>.png`. Failed projects are skipped and logged to stderr; the rest continue.
-
-### Clearing the image cache
-
-Card images are cached indefinitely in `CACHE_FOLDER` using content-addressed filenames. To force a full re-download:
-
-```bash
-rm -rf ./cache/*
-```
-
-To re-download a single card, delete its file from `./cache/` and re-render the project.
