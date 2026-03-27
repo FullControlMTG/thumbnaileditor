@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .config import Config
 from .project import ProjectConfig
-from .scryfall import fetch_image
+from .scryfall import fetch_image, resolve_image_url
 
 
 def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image.Image:
@@ -14,15 +14,15 @@ def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image
     width, height = _resolve_resolution(project_config, env_config)
     card_scale = project_config.card_scale or env_config.card_scale
     card_overlap = project_config.card_overlap or env_config.card_overlap
+    card_rotation = project_config.card_rotation if project_config.card_rotation is not None else env_config.card_rotation
     font_size = project_config.title_font_size or env_config.title_font_size
     bar_opacity = project_config.title_bar_opacity or env_config.title_bar_opacity
-    bar_position = project_config.title_bar_position or env_config.title_bar_position
-    bar_padding = project_config.title_bar_padding if project_config.title_bar_padding is not None else env_config.title_bar_padding
+    bar_position = project_config.title_bar_position  # pixel y, or None for default
 
     canvas = Image.new("RGBA", (width, height))
 
     # 1. Background
-    bg = fetch_image(project_config.background_card, env_config.cache_folder)
+    bg = fetch_image(resolve_image_url(project_config.background_card), env_config.cache_folder)
     bg = _make_mirrored_background(bg, width, height)
     canvas.paste(bg, (0, 0))
 
@@ -33,10 +33,15 @@ def render_thumbnail(project_config: ProjectConfig, env_config: Config) -> Image
         for url in project_config.foreground_cards
     ]
     cards = [_scale_to_height(img, card_height) for img in cards]
-    _paste_foreground_cards(canvas, cards, width, height, card_overlap)
+    _paste_foreground_cards(canvas, cards, width, height, card_overlap, card_rotation)
 
     # 3. Title bar + text
-    _draw_title(canvas, project_config.title, width, height, font_size, bar_opacity, bar_position, bar_padding)
+    pip_radius = (project_config.pip_radius if project_config.pip_radius is not None else env_config.pip_radius) if project_config.color_identity else 0
+    bar_y, bar_h = _draw_title(canvas, project_config.title, width, height, font_size, bar_opacity, bar_position, project_config.title_bar_height, pip_radius)
+
+    # 4. Color identity pips (drawn over the bar)
+    if project_config.color_identity:
+        _draw_color_identity(canvas, project_config.color_identity, width, bar_y, bar_h, pip_radius, project_config.pip_position, env_config.assets_folder)
 
     return canvas.convert("RGB")
 
@@ -87,6 +92,7 @@ def _paste_foreground_cards(
     width: int,
     height: int,
     overlap: float,
+    rotation: float,
 ) -> None:
     n = len(cards)
     # Total visual width = sum of card widths minus overlapping portions
@@ -97,8 +103,7 @@ def _paste_foreground_cards(
     y = (height - cards[0].height) // 2 + int(height * 0.04)  # slightly below center
 
     for i, card in enumerate(cards):
-        # Slight alternating tilt for a dynamic look
-        angle = (i - (n - 1) / 2) * 3.5
+        angle = (i - (n - 1) / 2) * rotation
         rotated = card.rotate(angle, expand=True, resample=Image.BICUBIC)
 
         # Re-center after rotation expansion
@@ -120,42 +125,96 @@ def _draw_title(
     height: int,
     font_size: int,
     bar_opacity: float,
-    bar_position: str,
-    bar_padding: float,
-) -> None:
+    bar_position: int | None,
+    bar_height: int | None,
+    pip_radius: int = 0,
+) -> tuple[int, int]:
     font = _load_font(font_size)
 
     # Measure text to size the bar
     dummy = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
     bbox = dummy.textbbox((0, 0), title, font=font)
     text_h = bbox[3] - bbox[1]
-    bar_h = text_h + int(font_size * 0.7)
 
-    if bar_position == "top":
-        bar_y = int(height * bar_padding)
-    else:  # bottom
-        bar_y = height - bar_h - int(height * bar_padding)
+    if bar_height is not None:
+        bar_h = bar_height
+        text_y_offset = bar_h // 2
+        pip_overhang = 0  # user positions pips explicitly
+    else:
+        pip_size = pip_radius * 2
+        pip_overlap = pip_size // 3
+        pip_overhang = pip_size - pip_overlap
+        text_padding = int(font_size * 0.3)
+        text_section_h = text_h + text_padding * 2
+        bar_h = text_section_h + pip_overlap
+        text_y_offset = text_section_h // 2
+
+    if bar_position is not None:
+        bar_y = bar_position
+    else:  # default: near bottom with 5% padding
+        bar_y = height - bar_h - pip_overhang - int(height * 0.05)
 
     # Semi-transparent black bar
     bar = Image.new("RGBA", (width, bar_h), (0, 0, 0, int(255 * bar_opacity)))
     canvas.paste(bar, (0, bar_y), bar)
 
-    # White text centered on the bar
+    # White text centered in the bar
     draw = ImageDraw.Draw(canvas)
     text_x = width // 2
-    text_y = bar_y + bar_h // 2
+    text_y = bar_y + text_y_offset
 
-    # Stroke (outline) for legibility
-    stroke_w = max(2, font_size // 20)
     draw.text(
         (text_x, text_y),
         title,
         font=font,
         fill=(255, 255, 255, 255),
         anchor="mm",
-        stroke_width=stroke_w,
-        stroke_fill=(0, 0, 0, 200),
     )
+
+    return bar_y, bar_h
+
+
+_PIP_ORDER = ["white", "blue", "black", "red", "green", "colorless"]
+_COLOR_TO_PIP = {"W": "white", "U": "blue", "B": "black", "R": "red", "G": "green", "C": "colorless"}
+
+
+def _draw_color_identity(
+    canvas: Image.Image,
+    color_identity: list[str],
+    width: int,
+    bar_y: int,
+    bar_h: int,
+    pip_radius: int,
+    pip_position: int | None,
+    assets_folder: str,
+) -> None:
+    pip_size = pip_radius * 2
+    pip_gap = int(pip_size * 0.15)
+
+    # Load pips in WUBRG+C order, skipping any that aren't requested or can't be found
+    identity_set = {c.upper() for c in color_identity}
+    pips: list[Image.Image] = []
+    for color_key in _PIP_ORDER:
+        short = next(k for k, v in _COLOR_TO_PIP.items() if v == color_key)
+        if short not in identity_set:
+            continue
+        pip_path = Path(assets_folder) / f"{color_key}.png"
+        if not pip_path.exists():
+            continue
+        pip = Image.open(pip_path).convert("RGBA")
+        pip = pip.resize((pip_size, pip_size), Image.LANCZOS)
+        pips.append(pip)
+
+    if not pips:
+        return
+
+    total_w = len(pips) * pip_size + (len(pips) - 1) * pip_gap
+    x = (width - total_w) // 2
+    pip_y = pip_position if pip_position is not None else bar_y + bar_h - pip_size // 3
+
+    for pip in pips:
+        canvas.paste(pip, (x, pip_y), pip)
+        x += pip_size + pip_gap
 
 
 def _load_font(size: int) -> ImageFont.FreeTypeFont:

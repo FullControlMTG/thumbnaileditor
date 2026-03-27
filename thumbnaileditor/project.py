@@ -10,17 +10,23 @@ else:
 
 @dataclass
 class ProjectConfig:
+    # [metadata]
     title: str
+    # [cards]
     background_card: str
     foreground_cards: list[str]
-    # Optional per-project overrides
-    output_resolution: str | None = None
+    # [title] — all optional per-project overrides
+    title_bar_position: int | None = None   # pixel y coordinate for top of bar
+    title_bar_height: int | None = None     # explicit bar height in pixels
+    title_bar_opacity: float | None = None
+    title_font_size: int | None = None
     card_scale: float | None = None
     card_overlap: float | None = None
-    title_font_size: int | None = None
-    title_bar_opacity: float | None = None
-    title_bar_position: str | None = None
-    title_bar_padding: float | None = None
+    card_rotation: float | None = None
+    color_identity: list[str] = field(default_factory=list)
+    pip_radius: int | None = None
+    pip_position: int | None = None         # explicit pixel y for top of pips
+    output_resolution: str | None = None
 
 
 def load_project(project_path: str | Path) -> tuple[Path, ProjectConfig]:
@@ -39,21 +45,30 @@ def load_project(project_path: str | Path) -> tuple[Path, ProjectConfig]:
 
     _validate(raw, config_file)
 
-    cards = raw["foreground_cards"]
+    cards = raw["cards"]["foreground_cards"]
     if not (1 <= len(cards) <= 5):
         raise ValueError(f"foreground_cards must have 1–5 entries, got {len(cards)}")
 
+    title_section = raw.get("title", {})
+    shadow_section = title_section.get("shadow", {})
+    cards_section = raw["cards"]
+    metadata_section = raw["metadata"]
+
     return path, ProjectConfig(
-        title=raw["title"],
-        background_card=raw["background_card"],
+        title=metadata_section["title"],
+        background_card=cards_section["background_card"],
         foreground_cards=cards,
-        output_resolution=raw.get("output_resolution"),
-        card_scale=raw.get("card_scale"),
-        card_overlap=raw.get("card_overlap"),
-        title_font_size=raw.get("title_font_size"),
-        title_bar_opacity=raw.get("title_bar_opacity"),
-        title_bar_position=raw.get("title_bar_position"),
-        title_bar_padding=raw.get("title_bar_padding"),
+        output_resolution=title_section.get("output_resolution"),
+        title_bar_position=shadow_section.get("position"),
+        title_bar_height=shadow_section.get("height"),
+        title_bar_opacity=shadow_section.get("opacity"),
+        title_font_size=title_section.get("font_size"),
+        card_scale=cards_section.get("card_scale"),
+        card_overlap=cards_section.get("card_overlap"),
+        card_rotation=cards_section.get("card_rotation"),
+        color_identity=metadata_section.get("color_identity", []),
+        pip_radius=title_section.get("pip_radius"),
+        pip_position=title_section.get("pip_position"),
     )
 
 
@@ -64,7 +79,10 @@ def discover_projects(projects_folder: str | Path) -> list[Path]:
 
 
 def _validate(raw: dict, config_file: Path) -> None:
-    required = ("title", "background_card", "foreground_cards")
-    missing = [k for k in required if k not in raw]
+    if "metadata" not in raw or "title" not in raw.get("metadata", {}):
+        raise ValueError(f"config.toml missing [metadata] section with 'title': {config_file}")
+    if "cards" not in raw:
+        raise ValueError(f"config.toml missing [cards] section: {config_file}")
+    missing = [k for k in ("background_card", "foreground_cards") if k not in raw["cards"]]
     if missing:
-        raise ValueError(f"config.toml missing required keys {missing}: {config_file}")
+        raise ValueError(f"[cards] section missing required keys {missing}: {config_file}")
